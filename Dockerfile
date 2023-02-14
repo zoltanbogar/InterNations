@@ -31,6 +31,8 @@ ENV SYMFONY_VERSION ${SYMFONY_VERSION}
 
 ENV APP_ENV=prod
 
+RUN docker-php-ext-install mysqli pdo pdo_mysql && docker-php-ext-enable pdo_mysql
+
 WORKDIR /srv/app
 
 # php extensions installer: https://github.com/mlocati/docker-php-extension-installer
@@ -54,6 +56,12 @@ RUN set -eux; \
     ;
 
 ###> recipes ###
+###> doctrine/doctrine-bundle ###
+RUN apk add --no-cache --virtual .pgsql-deps postgresql-dev; \
+	docker-php-ext-install -j$(nproc) pdo_pgsql; \
+	apk add --no-cache --virtual .pgsql-rundeps so:libpq.so.5; \
+	apk del .pgsql-deps
+###< doctrine/doctrine-bundle ###
 ###< recipes ###
 
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
