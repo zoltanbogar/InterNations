@@ -19,6 +19,13 @@ class MembershipService
 
     public function createGroup($params): array
     {
+        if ($params['_name'] === '') {
+            return [
+                'error' => 'Name is mandatory!',
+                'message' => null,
+            ];
+        }
+
         $group = new Membership();
         $group->setName($params['_name']);
 
