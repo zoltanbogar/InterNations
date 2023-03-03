@@ -1,0 +1,138 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}InterNations - Home{% endblock %}
+
+{% block body %}
+    {% if error is defined and error is not null %}
+        <div class="alert alert-danger" role="alert">
+            {{ error }}
+        </div>
+    {% endif %}
+    {% if message is defined and message is not null %}
+        <div class="alert alert-success" role="alert">
+            {{ message }}
+        </div>
+    {% endif %}
+
+    <div class="form-container d-flex">
+        <form action="{{ path('home_user') }}" method="post" class="gap-2 flex-column d-flex m-lg-5">
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="text" id="email" name="_email">
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="_password">
+            </div>
+
+            <div class="form-group">
+                <label for="name">Name:</label>
+                <input type="name" id="name" name="_name">
+            </div>
+
+            {# If you want to control the URL the user is redirected to on success #}
+            <input type="hidden" name="_target_path" value="/">
+
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary">Add User</button>
+            </div>
+        </form>
+        <form action="{{ path('home_group') }}" method="post" class="gap-2 flex-column d-flex m-lg-5">
+            <div class="form-group">
+                <label for="name">Name:</label>
+                <input type="text" id="name" name="_name">
+            </div>
+
+            {# If you want to control the URL the user is redirected to on success #}
+            <input type="hidden" name="_target_path" value="/">
+
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary">Add Group</button>
+            </div>
+        </form>
+    </div>
+
+    <h2>Users</h2>
+    {% if users is defined and users is not null %}
+        <section class="d-flex gap-4 m-lg-5 flex-wrap">
+            {% set continue = false %}
+            {% for user in users %}
+                {% if user.id == app.user.id %}
+                    {% set continue = true %}
+                {% endif %}
+                {% if not continue %}
+                    <div class="user-card card">
+                        <div class="card-body d-flex gap-1 flex-column">
+                            <div class="card-title">{{ user.email|e }}({{ user.name|e }})</div>
+                            <form action="{{ path('user_delete', {id: user.id}) }}" method="post">
+                                <button type="submit" class="btn btn-danger">Delete User</button>
+                            </form>
+                            <div class="card-body">
+                                <h3>Current groups:</h3>
+                                <div class="groups">
+                                    {% for group in user.getMemberships() %}
+                                        <div class="user-group">
+                                            <span>{{ group.name|e }}({{ group.id|e }})</span>
+                                            <span>
+                                            <form action="{{ path('user_remove_from_group', {id: user.id}) }}" method="post">
+                                                <input type="hidden" name="group_id" value="{{ group.id|e }}">
+                                                <button class="btn btn-danger">Remove</button>
+                                            </form>
+                                        </span>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div>
+                                <form action="{{ path('user_to_group', {id: user.id}) }}" method="post">
+                                    <select name="group_id" class="form-select">
+                                        {% for group in memberships %}
+                                            {% if user.getMemberships() is not empty %}
+                                                {% set addedGroups = [] %}
+                                                {% for userGroup in user.getMemberships() %}
+                                                    {% set addedGroups = addedGroups|merge([userGroup.id]) %}
+                                                {% endfor %}
+                                                {% if group.id not in addedGroups %}
+                                                    <option value="{{ group.id|e }}">{{ group.name|e }}({{ group.id|e }})</option>
+                                                {% endif %}
+                                            {% else %}
+                                                <option value="{{ group.id|e }}">{{ group.name|e }}({{ group.id|e }})</option>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </select>
+                                    <button type="submit" class="btn btn-success">Add</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+                {% if continue %}
+                    {% set continue = false %}
+                {% endif %}
+            {% endfor %}
+        </section>
+    {% endif %}
+
+    <h2>Groups</h2>
+    {% if memberships is defined and memberships is not null %}
+        <section class="d-flex gap-4 m-lg-5 flex-wrap">
+            {% for group in memberships %}
+                <div class="group-card card">
+                    <div class="card-body d-flex gap-1 flex-column">
+                        <div class="card-title">{{ group.name|e }}({{ group.id|e }})</div>
+                        <div>
+                            <form action="{{ path('group_delete', {id: group.id}) }}">
+                                <button type="submit" class="btn btn-danger">Delete</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </section>
+    {% endif %}
+{% endblock %}
