@@ -10,6 +10,8 @@ use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Doctrine\Common\Collections\ArrayCollection;
 
+use Symfony\Component\Validator\Constraints as Assert;
+
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: '`user`')]
 #[UniqueEntity(fields: ['email'], message: 'There is already an account with this email')]
@@ -19,8 +21,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
+    #[Assert\Email]
     #[ORM\Column(length: 180, unique: true)]
     private ?string $email = null;
+    #[ORM\Column(length: 180)]
+    private ?string $name = null;
     #[ORM\Column]
     private array $roles = [];
     /**
@@ -30,27 +35,20 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?string $password = null;
 
     /**
-     * @var Collection|Group[]
-     *
-     * @ORM\ManyToMany(targetEntity="Group", inversedBy="users")
-     * @ORM\JoinTable(
-     *  name="user_group",
-     *  joinColumns={
-     *      @ORM\JoinColumn(name="user_id", referencedColumnName="id")
-     *  },
-     *  inverseJoinColumns={
-     *      @ORM\JoinColumn(name="group_id", referencedColumnName="id")
-     *  }
-     * )
+     * Many Users have Many Groups.
+     * @var Collection<int, Membership>
      */
-    protected array|Collection|ArrayCollection $groups;
+    #[ORM\ManyToMany(targetEntity: Membership::class, inversedBy: 'users')]
+    #[ORM\JoinTable(name: 'users_memberships')]
+    private Collection $memberships;
 
     /**
      * Default constructor, initializes collections
      */
     public function __construct()
     {
-        $this->groups = new ArrayCollection();
+        $this->userGroups = new ArrayCollection();
+        $this->memberships = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -66,6 +64,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setEmail(string $email): self
     {
         $this->email = $email;
+
+        return $this;
+    }
+
+    public function getName(): ?string
+    {
+        return $this->name;
+    }
+
+    public function setName(string $name): self
+    {
+        $this->name = $name;
 
         return $this;
     }
@@ -124,28 +134,29 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     }
 
     /**
-     * @param Group $group
+     * @return Collection<int, Membership>
      */
-    public function addGroup(Group $group)
+    public function getMemberships(): Collection
     {
-        if ($this->groups->contains($group)) {
-            return;
-        }
-
-        $this->groups->add($group);
-        $group->addUser($this);
+        return $this->memberships;
     }
 
-    /**
-     * @param Group $group
-     */
-    public function removeGroup(Group $group)
+    public function addMembership(Membership $membership): self
     {
-        if (!$this->groups->contains($group)) {
-            return;
+        if (!$this->memberships->contains($membership)) {
+            $this->memberships->add($membership);
+            $membership->addMember($this);
         }
 
-        $this->groups->removeElement($group);
-        $group->removeUser($this);
+        return $this;
+    }
+
+    public function removeMembership(Membership $membership): self
+    {
+        if ($this->memberships->removeElement($membership)) {
+            $membership->removeMember($this);
+        }
+
+        return $this;
     }
 }
