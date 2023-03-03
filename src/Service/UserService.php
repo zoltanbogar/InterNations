@@ -21,6 +21,15 @@ class UserService
 
     public function createUser($params): array
     {
+        if ($params['_email'] === '' ||
+            $params['_password'] === '' ||
+            $params['_name'] === '') {
+            return [
+                'error' => 'All inputs has to have a value!',
+                'message' => null,
+            ];
+        }
+
         $user = new User();
         $user->setEmail($params['_email']);
         $user->setPassword($params['_password']);
