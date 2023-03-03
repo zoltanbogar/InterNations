@@ -19,13 +19,15 @@ security:
             security: false
         main:
             lazy: true
-            logout: ~
             provider: app_user_provider
             form_login:
-                login_path: "/login"
-                check_path: "/login_check"
+                login_path: app_sign_in
+                check_path: app_sign_in
+                enable_csrf: true
                 failure_path: "/login"
                 provider: app_user_provider
+            logout:
+                path: app_sign_out
             json_login:
                 check_path: api_login
 
@@ -45,8 +47,9 @@ security:
     # Easy way to control access for large sections of your site
     # Note: Only the *first* access control that matches will be used
     access_control:
-        # - { path: ^/admin, roles: ROLE_ADMIN }
-        # - { path: ^/profile, roles: ROLE_USER }
+        - { path: ^/login, role: PUBLIC_ACCESS }
+        - { path: ^/register, role: PUBLIC_ACCESS }
+        - { path: ^/, role: ROLE_USER }
 
 when@test:
     security:
